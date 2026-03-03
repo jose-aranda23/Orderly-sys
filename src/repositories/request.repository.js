@@ -66,6 +66,58 @@ class RequestRepository {
             if (conn) conn.release();
         }
     }
+
+    async findAllForExport() {
+        const conn = await db.getConnection();
+        try {
+            const query = `SELECT s.*, p.nombre as producto_nombre, u.nombre as creador_nombre 
+                           FROM solicitudes s 
+                           LEFT JOIN productos p ON s.producto_id = p.id 
+                           JOIN usuarios u ON s.usuario_creador = u.id 
+                           ORDER BY s.fecha_creacion DESC`;
+            return await conn.query(query);
+        } finally {
+            if (conn) conn.release();
+        }
+    }
+
+    async findAllFiltered(filters = {}) {
+        const conn = await db.getConnection();
+        try {
+            const { usuario_id, fecha_inicio, fecha_fin, estado } = filters;
+            let query = `SELECT s.*, p.nombre as producto_nombre, u.nombre as creador_nombre 
+                         FROM solicitudes s 
+                         LEFT JOIN productos p ON s.producto_id = p.id 
+                         JOIN usuarios u ON s.usuario_creador = u.id 
+                         WHERE 1=1`;
+            let params = [];
+
+            if (usuario_id) {
+                query += ' AND s.usuario_creador = ?';
+                params.push(usuario_id);
+            }
+
+            if (estado) {
+                query += ' AND s.estado = ?';
+                params.push(estado);
+            }
+
+            if (fecha_inicio) {
+                query += ' AND DATE(s.fecha_creacion) >= ?';
+                params.push(fecha_inicio);
+            }
+
+            if (fecha_fin) {
+                query += ' AND DATE(s.fecha_creacion) <= ?';
+                params.push(fecha_fin);
+            }
+
+            query += ' ORDER BY s.fecha_creacion DESC';
+            return await conn.query(query, params);
+        } finally {
+            if (conn) conn.release();
+        }
+    }
 }
 
 module.exports = new RequestRepository();

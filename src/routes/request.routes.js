@@ -30,4 +30,18 @@ router.patch(
     requestController.updateStatus
 );
 
+// Exportar a Excel (Nivel 3 en adelante)
+router.get(
+    '/exportar',
+    requireLevel(3),
+    requestController.export
+);
+
+// Obtener todas las solicitudes con filtros (Nivel 3 en adelante)
+router.get(
+    '/todos',
+    requireLevel(3),
+    requestController.getAll
+);
+
 module.exports = router;

@@ -99,6 +99,30 @@ class RequestService {
         const filterId = userNivel === 1 ? userId : null;
         return await requestRepository.findAll(limit, offset, filterId);
     }
+
+    async getRequestsForExport(userId, filters = {}) {
+        let requests;
+        
+        if (Object.keys(filters).length > 0) {
+            requests = await requestRepository.findAllFiltered(filters);
+        } else {
+            requests = await requestRepository.findAllForExport();
+        }
+        
+        await auditService.logAction({
+            usuario_id: userId,
+            accion: 'EXPORTAR_INFORME',
+            entidad: 'solicitudes',
+            entidad_id: null,
+            descripcion: `Exportación de informe de solicitudes. Total: ${requests.length} registros. Filtros: ${Object.keys(filters).length > 0 ? JSON.stringify(filters) : 'ninguno'}.`
+        });
+
+        return requests;
+    }
+
+    async getAllRequests(filters = {}) {
+        return await requestRepository.findAllFiltered(filters);
+    }
 }
 
 module.exports = new RequestService();

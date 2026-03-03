@@ -16,12 +16,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const userNameDisplay = document.getElementById('userNameDisplay');
     const userLevelDisplay = document.getElementById('userLevelDisplay');
     const navProductos = document.getElementById('navProductos');
+    const navInformes = document.getElementById('navInformes');
     const navUsuarios = document.getElementById('navUsuarios');
     const logoutBtn = document.getElementById('logoutBtn');
     
     // App State
     let currentData = [];
-    let currentMode = 'solicitudes'; // 'solicitudes', 'productos', 'usuarios'
+    let currentMode = 'solicitudes'; // 'solicitudes', 'productos', 'usuarios', 'informes'
+    let informeData = [];
+    let usersList = [];
 
     // Init UI
     userNameDisplay.textContent = user.nombre;
@@ -31,6 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (user.nivel >= 3) {
         navProductos.classList.remove('hidden');
         navUsuarios.classList.remove('hidden');
+        navInformes.classList.remove('hidden');
     }
 
     logoutBtn.addEventListener('click', () => {
@@ -51,7 +55,8 @@ document.addEventListener('DOMContentLoaded', () => {
             titleMapping = {
                 'solicitudes': 'Listado de Solicitudes',
                 'productos': 'Catálogo de Productos Core',
-                'usuarios': 'Gestión de Accesos (Usuarios)'
+                'usuarios': 'Gestión de Accesos (Usuarios)',
+                'informes': 'Informes y Estadísticas'
             };
             document.getElementById('pageTitle').textContent = titleMapping[view];
             
@@ -59,6 +64,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const btnNew = document.getElementById('btnNewRequest');
             if (view === 'solicitudes') {
                 btnNew.textContent = '+ Nueva solicitud';
+            } else if (view === 'informes') {
+                btnNew.textContent = '📥 Exportar a Excel';
+                btnNew.onclick = exportToExcel;
             } else {
                 btnNew.textContent = `+ Nuevo ${view.slice(0, -1)}`;
             }
@@ -94,6 +102,13 @@ document.addEventListener('DOMContentLoaded', () => {
         tableContainer.classList.add('hidden');
         
         try {
+            if (currentMode === 'informes') {
+                const usersRes = await authFetch('/api/v1/usuarios/list');
+                usersList = usersRes.data || [];
+                await loadInformeData();
+                return;
+            }
+            
             const data = await authFetch(`/api/v1/${currentMode}`);
             currentData = data.data || [];
             renderTable();
@@ -103,6 +118,161 @@ document.addEventListener('DOMContentLoaded', () => {
             loader.classList.add('hidden');
             tableContainer.classList.remove('hidden');
         }
+    };
+
+    const loadInformeData = async (filters = {}) => {
+        loader.classList.remove('hidden');
+        tableContainer.classList.add('hidden');
+        try {
+            let url = '/api/v1/solicitudes/todos?';
+            if (filters.usuario_id) url += `usuario_id=${filters.usuario_id}&`;
+            if (filters.fecha_inicio) url += `fecha_inicio=${filters.fecha_inicio}&`;
+            if (filters.fecha_fin) url += `fecha_fin=${filters.fecha_fin}&`;
+            if (filters.estado) url += `estado=${filters.estado}&`;
+            
+            const res = await authFetch(url);
+            informeData = res.data || [];
+            renderInformeView();
+        } catch (error) {
+            console.error(error);
+            alert('Error al cargar datos: ' + error.message);
+            loader.classList.add('hidden');
+            tableContainer.classList.remove('hidden');
+        }
+    };
+
+    const renderInformeView = () => {
+        thead.innerHTML = '';
+        tbody.innerHTML = '';
+        loader.classList.add('hidden');
+        tableContainer.classList.remove('hidden');
+
+        const userOptions = usersList.map(u => `<option value="${u.id}">${u.nombre}</option>`).join('');
+
+        const stats = {
+            total: informeData.length,
+            CREADA: informeData.filter(r => r.estado === 'CREADA').length,
+            APROBADA: informeData.filter(r => r.estado === 'APROBADA').length,
+            EN_PRODUCCION: informeData.filter(r => r.estado === 'EN_PRODUCCION').length,
+            FINALIZADA: informeData.filter(r => r.estado === 'FINALIZADA').length,
+            RECHAZADA: informeData.filter(r => r.estado === 'RECHAZADA').length
+        };
+
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" style="padding: 1rem;">
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end;">
+                        <div style="flex: 1; min-width: 150px;">
+                            <label style="display: block; margin-bottom: 0.5rem; color: var(--clr-text-muted); font-size: 0.85rem;">Usuario</label>
+                            <select id="filterUsuario" class="input-container" style="width: 100%; padding: 0.6rem; background: var(--clr-bg-card); color: var(--clr-text-main); border: 1px solid var(--clr-border); border-radius: 4px;">
+                                <option value="">Todos los usuarios</option>
+                                ${userOptions}
+                            </select>
+                        </div>
+                        <div style="flex: 1; min-width: 150px;">
+                            <label style="display: block; margin-bottom: 0.5rem; color: var(--clr-text-muted); font-size: 0.85rem;">Estado</label>
+                            <select id="filterEstado" class="input-container" style="width: 100%; padding: 0.6rem; background: var(--clr-bg-card); color: var(--clr-text-main); border: 1px solid var(--clr-border); border-radius: 4px;">
+                                <option value="">Todos los estados</option>
+                                <option value="CREADA">CREADA</option>
+                                <option value="APROBADA">APROBADA</option>
+                                <option value="EN_PRODUCCION">EN PRODUCCION</option>
+                                <option value="FINALIZADA">FINALIZADA</option>
+                                <option value="RECHAZADA">RECHAZADA</option>
+                            </select>
+                        </div>
+                        <div style="flex: 1; min-width: 150px;">
+                            <label style="display: block; margin-bottom: 0.5rem; color: var(--clr-text-muted); font-size: 0.85rem;">Desde</label>
+                            <input type="date" id="filterFechaInicio" class="input-container" style="width: 100%; padding: 0.6rem; background: var(--clr-bg-card); color: var(--clr-text-main); border: 1px solid var(--clr-border); border-radius: 4px;">
+                        </div>
+                        <div style="flex: 1; min-width: 150px;">
+                            <label style="display: block; margin-bottom: 0.5rem; color: var(--clr-text-muted); font-size: 0.85rem;">Hasta</label>
+                            <input type="date" id="filterFechaFin" class="input-container" style="width: 100%; padding: 0.6rem; background: var(--clr-bg-card); color: var(--clr-text-main); border: 1px solid var(--clr-border); border-radius: 4px;">
+                        </div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="btn-primary" onclick="applyFilters()">🔍 Filtrar</button>
+                            <button class="btn-outline" onclick="clearFilters()">🧹 Limpiar</button>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="7" style="padding: 1rem; background: rgba(59, 130, 246, 0.1);">
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <div style="background: var(--clr-bg-card); padding: 1rem; border-radius: 8px; text-align: center; min-width: 100px;">
+                            <div style="font-size: 1.5rem; font-weight: bold; color: var(--clr-primary);">${stats.total}</div>
+                            <div style="font-size: 0.75rem; color: var(--clr-text-muted);">Total</div>
+                        </div>
+                        <div style="background: var(--clr-bg-card); padding: 1rem; border-radius: 8px; text-align: center; min-width: 100px;">
+                            <div style="font-size: 1.5rem; font-weight: bold; color: #64748B;">${stats.CREADA}</div>
+                            <div style="font-size: 0.75rem; color: var(--clr-text-muted);">CREADA</div>
+                        </div>
+                        <div style="background: var(--clr-bg-card); padding: 1rem; border-radius: 8px; text-align: center; min-width: 100px;">
+                            <div style="font-size: 1.5rem; font-weight: bold; color: #10B981;">${stats.APROBADA}</div>
+                            <div style="font-size: 0.75rem; color: var(--clr-text-muted);">APROBADA</div>
+                        </div>
+                        <div style="background: var(--clr-bg-card); padding: 1rem; border-radius: 8px; text-align: center; min-width: 100px;">
+                            <div style="font-size: 1.5rem; font-weight: bold; color: #F59E0B;">${stats.EN_PRODUCCION}</div>
+                            <div style="font-size: 0.75rem; color: var(--clr-text-muted);">EN PROD.</div>
+                        </div>
+                        <div style="background: var(--clr-bg-card); padding: 1rem; border-radius: 8px; text-align: center; min-width: 100px;">
+                            <div style="font-size: 1.5rem; font-weight: bold; color: #10B981;">${stats.FINALIZADA}</div>
+                            <div style="font-size: 0.75rem; color: var(--clr-text-muted);">FINALIZADA</div>
+                        </div>
+                        <div style="background: var(--clr-bg-card); padding: 1rem; border-radius: 8px; text-align: center; min-width: 100px;">
+                            <div style="font-size: 1.5rem; font-weight: bold; color: #EF4444;">${stats.RECHAZADA}</div>
+                            <div style="font-size: 0.75rem; color: var(--clr-text-muted);">RECHAZADA</div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        `;
+
+        thead.innerHTML = `
+            <th>ID</th>
+            <th>Estado</th>
+            <th>Producto</th>
+            <th>Cantidad</th>
+            <th>Usuario</th>
+            <th>Fecha Creación</th>
+            <th>Fecha Programada</th>
+        `;
+
+        if (informeData.length === 0) {
+            tbody.innerHTML += `<tr><td colspan="7" style="text-align: center; padding: 2rem; color: var(--clr-text-muted);">No hay registros con los filtros seleccionados.</td></tr>`;
+            return;
+        }
+
+        informeData.forEach(item => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>#${item.id}</td>
+                <td><span class="badge ${getBadgeClass(item.estado)}">${item.estado}</span></td>
+                <td>${item.producto_nombre || item.producto_personalizado || '-'}</td>
+                <td>${item.cantidad}</td>
+                <td>${item.creador_nombre}</td>
+                <td>${item.fecha_creacion ? item.fecha_creacion.split('T')[0] : '-'}</td>
+                <td>${item.fecha_finalizacion_programada || '-'}</td>
+            `;
+            tbody.appendChild(row);
+        });
+    };
+
+    window.applyFilters = () => {
+        const filters = {
+            usuario_id: document.getElementById('filterUsuario').value,
+            estado: document.getElementById('filterEstado').value,
+            fecha_inicio: document.getElementById('filterFechaInicio').value,
+            fecha_fin: document.getElementById('filterFechaFin').value
+        };
+        loadInformeData(filters);
+    };
+
+    window.clearFilters = () => {
+        document.getElementById('filterUsuario').value = '';
+        document.getElementById('filterEstado').value = '';
+        document.getElementById('filterFechaInicio').value = '';
+        document.getElementById('filterFechaFin').value = '';
+        loadInformeData({});
     };
 
     const getBadgeClass = (status) => {
@@ -164,16 +334,26 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
         else if (currentMode === 'usuarios') {
-            thead.innerHTML = `<th>ID</th><th>Usuario</th><th>Nivel</th><th>Estado / Intentos</th><th>Acciones</th>`;
+            thead.innerHTML = `<th>ID</th><th>Usuario</th><th>Nivel</th><th>Estado</th><th>Intentos</th><th>Acciones</th>`;
             currentData.forEach(item => {
                 const row = document.createElement('tr');
-                const isBlocked = item.bloqueado ? '<span class="text-danger">BLOQUEADO</span>' : 'Activo';
+                const statusBadge = item.estado === 'activo' 
+                    ? '<span class="badge badge-finalizada">Activo</span>' 
+                    : '<span class="badge badge-rechazada">Inactivo</span>';
                 row.innerHTML = `
                     <td>#${item.id}</td>
                     <td><strong>${item.nombre}</strong><br/><small>${item.correo}</small></td>
                     <td>Nivel ${item.nivel}</td>
-                    <td>${isBlocked} (${item.intentos_fallidos})</td>
-                    <td><button class="btn-outline btn-sm" onclick="appContext.resetPass(${item.id})">Reset Pass</button></td>
+                    <td>${statusBadge}</td>
+                    <td>${item.intentos_fallidos}</td>
+                    <td style="display:flex; gap:0.3rem;">
+                        <button class="btn-outline btn-sm" onclick="appContext.editUser(${item.id}, '${item.nombre}', '${item.correo}', ${item.nivel})" title="Editar">✏️</button>
+                        <button class="btn-outline btn-sm" onclick="appContext.resetPass(${item.id})" title="Restaurar contraseña">🔑</button>
+                        ${item.estado === 'activo' 
+                            ? `<button class="btn-outline btn-sm" onclick="appContext.toggleUserStatus(${item.id}, 'desactivar')" title="Desactivar">🔴</button>` 
+                            : `<button class="btn-outline btn-sm" onclick="appContext.toggleUserStatus(${item.id}, 'activar')" title="Activar">🟢</button>`}
+                        <button class="btn-outline btn-sm text-danger" onclick="appContext.deleteUser(${item.id})" title="Eliminar">🗑️</button>
+                    </td>
                 `;
                 tbody.appendChild(row);
             });
@@ -211,6 +391,98 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(res.success) {
                     alert('Restablecido. Intentos fallidos purgados.'); fetchData();
                 } else alert(res.message);
+            }
+        },
+        editUser: (id, nombre, correo, nivel) => {
+            const form = `
+                <div class="form-group">
+                    <label>Nombre Completo</label>
+                    <input type="text" id="editNombre" value="${nombre}" class="input-container" style="width:100%; padding:0.8rem; background:var(--clr-bg-card); color:var(--clr-text-main); border:1px solid var(--clr-border);">
+                </div>
+                <div class="form-group">
+                    <label>Correo Electrónico</label>
+                    <input type="email" id="editCorreo" value="${correo}" class="input-container" style="width:100%; padding:0.8rem; background:var(--clr-bg-card); color:var(--clr-text-main); border:1px solid var(--clr-border);">
+                </div>
+                <div class="form-group">
+                    <label>Nivel de Acceso</label>
+                    <select id="editNivel" class="input-container" style="width:100%; padding:0.8rem; background:var(--clr-bg-card); color:var(--clr-text-main); border:1px solid var(--clr-border);">
+                        <option value="1" ${nivel === 1 ? 'selected' : ''}>Nivel 1 - Operador</option>
+                        <option value="2" ${nivel === 2 ? 'selected' : ''}>Nivel 2 - Producción</option>
+                        <option value="3" ${nivel === 3 ? 'selected' : ''}>Nivel 3 - Supervisor</option>
+                        <option value="4" ${nivel === 4 ? 'selected' : ''}>Nivel 4 - Administrador</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-outline" onclick="document.getElementById('globalModal').classList.remove('active')">Cancelar</button>
+                    <button class="btn-primary" id="btnSaveEdit">Guardar Cambios</button>
+                </div>
+            `;
+            openModal('Editar Usuario', form);
+
+            document.getElementById('btnSaveEdit').addEventListener('click', async () => {
+                const payload = {
+                    nombre: document.getElementById('editNombre').value,
+                    correo: document.getElementById('editCorreo').value,
+                    nivel: parseInt(document.getElementById('editNivel').value)
+                };
+
+                if (!payload.nombre || !payload.correo) {
+                    alert('Nombre y correo son obligatorios');
+                    return;
+                }
+
+                try {
+                    const res = await authFetch(`/api/v1/usuarios/${id}`, {
+                        method: 'PUT',
+                        body: JSON.stringify(payload)
+                    });
+                    if (res.success) {
+                        closeModal();
+                        fetchData();
+                    } else {
+                        alert(res.message);
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            });
+        },
+        toggleUserStatus: async (id, action) => {
+            const message = action === 'activar' 
+                ? '¿Está seguro de activar este usuario?' 
+                : '¿Está seguro de desactivar este usuario?';
+            
+            if (confirm(message)) {
+                try {
+                    const res = await authFetch(`/api/v1/usuarios/${id}/${action}`, {
+                        method: 'PATCH'
+                    });
+                    if (res.success) {
+                        alert(res.message);
+                        fetchData();
+                    } else {
+                        alert(res.message);
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+        },
+        deleteUser: async (id) => {
+            if (confirm('¿Está seguro de eliminar este usuario? Esta acción es irreversible.')) {
+                try {
+                    const res = await authFetch(`/api/v1/usuarios/${id}`, {
+                        method: 'DELETE'
+                    });
+                    if (res.success) {
+                        alert('Usuario eliminado correctamente');
+                        fetchData();
+                    } else {
+                        alert(res.message);
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
             }
         },
         handleRequestAction: (id, currentStatus) => {
@@ -610,6 +882,57 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     });
+
+    const exportToExcel = async () => {
+        try {
+            const btn = document.getElementById('btnNewRequest');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="btn-spinner"></span> Generando...';
+            
+            let url = '/api/v1/solicitudes/exportar?';
+            
+            if (currentMode === 'informes') {
+                const usuario_id = document.getElementById('filterUsuario')?.value;
+                const estado = document.getElementById('filterEstado')?.value;
+                const fecha_inicio = document.getElementById('filterFechaInicio')?.value;
+                const fecha_fin = document.getElementById('filterFechaFin')?.value;
+                
+                if (usuario_id) url += `usuario_id=${usuario_id}&`;
+                if (estado) url += `estado=${estado}&`;
+                if (fecha_inicio) url += `fecha_inicio=${fecha_inicio}&`;
+                if (fecha_fin) url += `fecha_fin=${fecha_fin}&`;
+            }
+            
+            const response = await fetch(url, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.message || 'Error al exportar');
+            }
+            
+            const blob = await response.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = `informe_solicitudes_${new Date().toISOString().split('T')[0]}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(blobUrl);
+            a.remove();
+            
+            btn.disabled = false;
+            btn.textContent = '📥 Exportar a Excel';
+        } catch (error) {
+            alert('Error al exportar: ' + error.message);
+            const btn = document.getElementById('btnNewRequest');
+            btn.disabled = false;
+            btn.textContent = '📥 Exportar a Excel';
+        }
+    };
 
     // Boot system
     fetchData();

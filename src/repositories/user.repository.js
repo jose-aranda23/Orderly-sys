@@ -80,6 +80,17 @@ class UserRepository {
         }
     }
 
+    async findAllForList() {
+        const conn = await db.getConnection();
+        try {
+            return await conn.query(
+                'SELECT id, nombre FROM usuarios ORDER BY nombre ASC'
+            );
+        } finally {
+            if (conn) conn.release();
+        }
+    }
+
     async delete(id) {
         const conn = await db.getConnection();
         try {

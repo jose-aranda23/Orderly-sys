@@ -64,6 +64,33 @@ class UserController {
             next(error);
         }
     }
+
+    async getList(req, res, next) {
+        try {
+            const users = await userService.getAllForList();
+            res.status(200).json({ success: true, data: users });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async activate(req, res, next) {
+        try {
+            await userService.activateUser(req.user.id, req.user.nivel, req.params.id);
+            res.status(200).json({ success: true, message: 'Usuario activado correctamente.' });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async deactivate(req, res, next) {
+        try {
+            await userService.deactivateUser(req.user.id, req.user.nivel, req.params.id);
+            res.status(200).json({ success: true, message: 'Usuario desactivado correctamente.' });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 module.exports = new UserController();

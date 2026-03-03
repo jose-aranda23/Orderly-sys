@@ -169,6 +169,56 @@ class UserService {
         const offset = (page - 1) * limit;
         return await userRepository.findAll(limit, offset);
     }
+
+    async getAllForList() {
+        return await userRepository.findAllForList();
+    }
+
+    async activateUser(actorId, actorNivel, targetId) {
+        const targetUser = await userRepository.findById(targetId);
+        if (!targetUser) {
+            throw { statusCode: 404, message: 'Usuario no encontrado.' };
+        }
+
+        if (actorNivel === 3 && targetUser.nivel === 4) {
+            throw { statusCode: 403, message: 'Privilegios insuficientes para activar a un Administrador Nivel 4.' };
+        }
+
+        await userRepository.update(targetId, { estado: 'activo' });
+
+        await auditService.logAction({
+            usuario_id: actorId,
+            accion: 'ACTIVAR_USUARIO',
+            entidad: 'usuarios',
+            entidad_id: targetId,
+            descripcion: `Se activó el usuario ${targetUser.nombre}.`
+        });
+    }
+
+    async deactivateUser(actorId, actorNivel, targetId) {
+        const targetUser = await userRepository.findById(targetId);
+        if (!targetUser) {
+            throw { statusCode: 404, message: 'Usuario no encontrado.' };
+        }
+
+        if (actorNivel === 3 && targetUser.nivel === 4) {
+            throw { statusCode: 403, message: 'Privilegios insuficientes para desactivar a un Administrador Nivel 4.' };
+        }
+
+        if (actorId === parseInt(targetId)) {
+            throw { statusCode: 400, message: 'No puedes desactivarte a ti mismo.' };
+        }
+
+        await userRepository.update(targetId, { estado: 'inactivo' });
+
+        await auditService.logAction({
+            usuario_id: actorId,
+            accion: 'DESACTIVAR_USUARIO',
+            entidad: 'usuarios',
+            entidad_id: targetId,
+            descripcion: `Se desactivó el usuario ${targetUser.nombre}.`
+        });
+    }
 }
 
 module.exports = new UserService();

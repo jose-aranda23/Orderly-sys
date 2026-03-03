@@ -49,4 +49,25 @@ router.get(
     userController.list
 );
 
+// Lista de usuarios para filtros (Nivel 3 en adelante)
+router.get(
+    '/list',
+    requireLevel(3),
+    userController.getList
+);
+
+// Activar usuario
+router.patch(
+    '/:id/activar',
+    requireLevel(3),
+    userController.activate
+);
+
+// Desactivar usuario
+router.patch(
+    '/:id/desactivar',
+    requireLevel(3),
+    userController.deactivate
+);
+
 module.exports = router;

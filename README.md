@@ -1,31 +1,39 @@
 # Sistema de Gestión de Solicitudes de Producción
 
-Sistema avanzado con estricto control de autorización multicapa, pistas de auditoría integradas y reglas de negocio robustas. Desarrollado en Node.js, Express y MariaDB.
+Sistema web empresarial para la gestión de solicitudes de producción con control de acceso jerárquico, auditoría completa y exportación de informes.
 
-## Requisitos
+## 🚀 Características
+
+- **Gestión de Usuarios** - Sistema de niveles (1-4) con control de acceso
+- **Solicitudes de Producción** - Flujo completo de solicitudes con estados
+- **Gestión de Productos** - Catálogo de productos fabricables
+- **Informes y Estadísticas** - Dashboard con filtros y exportación a Excel
+- **Auditoría** - Registro completo de todas las acciones del sistema
+- **Seguridad** - Autenticación JWT, protección de rutas, intentos fallidos
+
+## 📋 Requisitos
+
 - **Node.js**: v18+
 - **MariaDB**: v10.4+
 
-## Instalación y Despliegue
+## 🛠️ Instalación
 
-### 1. Clonar / Preparar Directorio
-Acceder a la carpeta del proyecto (donde resida este archivo).
+### 1. Clonar el proyecto
+```bash
+git clone <repositorio> cd sistema-produccion
+```
 
-### 2. Instalar Dependencias
+### 2. Instalar dependencias
 ```bash
 npm install
 ```
 
 ### 3. Configurar Base de Datos
-1. Inicie su servicio local o remoto de MariaDB.
-2. Ejecute el script `database/schema.sql` en su gestor de bases de datos preferido (DBeaver, HeidiSQL, phpMyAdmin, línea de comandos de MariaDB).
-   Esto creará la base de datos `sistema_produccion`, las tablas necesarias y registrará al usuario administrador root.
-3. Configure los datos de conexión correspondientes en el archivo `.env`.
-   
-   > **Nota:** La contraseña por defecto del administrador inicial es `admin123`.
+1. Inicie MariaDB en su servidor
+2. Ejecute el script `database/schema.sql`
+3. Configure las credenciales en `.env`
 
-### 4. Variables de Entorno (`.env`)
-Asegúrese que en el archivo `.env` sus variables reflejen su entorno de MariaDB:
+### 4. Variables de Entorno (.env)
 ```env
 PORT=3000
 DB_HOST=localhost
@@ -33,34 +41,87 @@ DB_USER=root
 DB_PASSWORD=su_password
 DB_NAME=sistema_produccion
 DB_PORT=3306
-JWT_SECRET=production_secret_key_change_me
+JWT_SECRET=su_secret_key
 JWT_EXPIRES_IN=8h
 ```
 
 ### 5. Iniciar Servidor
-Para desarrollo (con hot-reloading via nodemon):
+
+**Desarrollo (con hot-reload):**
 ```bash
 npm run dev
 ```
 
-Para entorno productivo:
+**Producción:**
 ```bash
 npm start
 ```
 
-## Arquitectura y Reglas Aplicadas
-- **Controllers**: Exclusivos para recepción, orquestación DTO y entrega de respuestas HTTP.
-- **Services**: Contienen toda la lógica de negocio purificada y estricta (validaciones de estados, inmutabilidad de variables posterior a aprobación y protección de auto-bloqueo).
-- **Repositories**: Aislamiento total de MariaDB SQL queries. Únicos autorizados a lanzar interacciones DB.
-- **Auditoría Transversal**: Registros automáticos inmutables en eventos de autenticación, CRUD y ciclo de vida de Solicitudes. Todo cambio crítico está traceado y es bloqueante si falla su guardado.
+El servidor estará disponible en `http://localhost:3000`
 
-## Resumen de Endpoint Clave y Reglas
-- Regla 5 Intentos Fallidos activa y funcional en ruta `/api/v1/usuarios/login`.
-- Controladores fuertemente protegidos por middleware `requireLevel(min_level)` (Niveles del 1 al 4).
-- Flujo de solicitudes:
-  1. `CREADA` -> `APROBADA` (Debe suministrar la `fecha_finalizacion_programada`).
-  2. Una vez aprobada es inmutable esa fecha (ver `request.service.js`).
-  3. `RECHAZADA` exige enviar `justificacion_rechazo`.
+## 👤 Credenciales por Defecto
 
-## Prueba con Postman
-Importe la colección `docs/postman_collection.json` para testear flujos en pocos clics.
+| Usuario | Correo | Contraseña | Nivel |
+|---------|--------|------------|-------|
+| Administrador | admin@test.com | admin123 | 4 |
+
+## 📱 Funcionalidades
+
+### Niveles de Acceso
+
+| Nivel | Nombre | Permisos |
+|-------|--------|----------|
+| 1 | Operador | Crear solicitudes propias |
+| 2 | Producción | Gestionar solicitudes (aprobar, rechazar, finalizar) |
+| 3 | Supervisor | Gestionar usuarios, productos, informes |
+| 4 | Administrador | Acceso total al sistema |
+
+### Estados de Solicitud
+
+```
+CREADA → APROBADA → EN_PRODUCCION → FINALIZADA
+    ↓
+  RECHAZADA
+```
+
+### Módulos del Sistema
+
+1. **Solicitudes** - Crear y gestionar solicitudes de producción
+2. **Productos** - Catálogo de productos fabricables
+3. **Informes** - Dashboard con estadísticas y exportación a Excel
+4. **Usuarios** - Gestión de usuarios del sistema
+
+## 📂 Estructura del Proyecto
+
+```
+sistema-produccion/
+├── src/
+│   ├── config/          # Configuración
+│   ├── controllers/    # Controladores HTTP
+│   ├── dtos/          # Objetos de transferencia de datos
+│   ├── middlewares/    # Middlewares Express
+│   ├── repositories/   # Acceso a datos
+│   ├── routes/        # Rutas API
+│   ├── services/      # Lógica de negocio
+│   └── utils/         # Utilidades
+├── public/            # Archivos estáticos
+├── database/          # Scripts de base de datos
+├── docs/             # Documentación
+└── package.json
+```
+
+## 📖 Documentación
+
+- [Contrato Técnico](./TECHNICAL_CONTRACT.md)
+- [Documentación API](./docs/API_DOCUMENTATION.md)
+- [Manual de Usuario](./docs/USER_GUIDE.md)
+- [Guía de Despliegue](./docs/DEPLOYMENT_GUIDE.md)
+- [Changelog](./docs/CHANGELOG.md)
+
+## 🧪 Probar con Postman
+
+Importe la colección `docs/postman_collection.json` para testear todos los endpoints.
+
+## 📝 Licencia
+
+Proprietario - Todos los derechos reservados

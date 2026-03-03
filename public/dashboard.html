@@ -8,18 +8,19 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
     <style>
-        /* Dashboard specific layout */
+        /* Dashboard specific layout - Modern Dashboard */
         body {
             background-color: var(--clr-bg-darkest);
             display: flex;
             height: 100vh;
             overflow: hidden;
+            font-family: 'Inter', sans-serif;
         }
 
+        /* Sidebar - Dark */
         .sidebar {
             width: 260px;
-            background: rgba(15, 23, 42, 0.95);
-            border-right: 1px solid var(--clr-border);
+            background: var(--clr-sidebar);
             display: flex;
             flex-direction: column;
             padding: 1.5rem;
@@ -30,199 +31,121 @@
             margin-bottom: 2rem;
             display: flex;
             align-items: center;
-            gap: 0.8rem;
+            gap: 0.75rem;
         }
 
-        .sidebar-header h2 {
-            font-size: 1.2rem;
-            color: var(--clr-primary);
+        .sidebar-header h1 {
+            font-size: 1.25rem;
+            color: #fff;
+            font-weight: 700;
         }
 
         .nav-link {
             display: flex;
             align-items: center;
-            gap: 0.8rem;
-            padding: 0.8rem 1rem;
-            color: var(--clr-text-muted);
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            color: #94A3B8;
             text-decoration: none;
             border-radius: var(--border-radius-sm);
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.25rem;
             transition: var(--transition-fast);
             cursor: pointer;
+            font-weight: 500;
+            font-size: 0.9rem;
         }
 
-        .nav-link:hover,
+        .nav-link:hover {
+            background: var(--clr-sidebar-hover);
+            color: #fff;
+        }
+
         .nav-link.active {
-            background: rgba(59, 130, 246, 0.1);
-            color: var(--clr-primary);
+            background: var(--clr-primary);
+            color: #fff;
         }
 
         .user-panel {
             margin-top: auto;
             padding-top: 1.5rem;
-            border-top: 1px solid var(--clr-border);
+            border-top: 1px solid #334155;
         }
 
         .user-info p {
             font-size: 0.9rem;
-            font-weight: 500;
+            font-weight: 600;
+            color: #fff;
         }
 
         .user-info span {
             font-size: 0.75rem;
-            color: var(--clr-text-muted);
+            color: #94A3B8;
         }
 
+        /* Main Content - Light */
         .main-content {
             flex: 1;
-            padding: 2rem;
+            padding: 1.5rem 2rem;
             overflow-y: auto;
             position: relative;
+            background: var(--clr-bg-darkest);
         }
 
         .topbar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 2rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--clr-border);
-        }
-
-        /* Lists & Tables */
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 1.5rem;
-            font-size: 0.9rem;
-        }
-
-        .data-table th,
-        .data-table td {
-            padding: 1rem;
-            text-align: left;
-            border-bottom: 1px solid var(--clr-border);
-        }
-
-        .data-table th {
-            color: var(--clr-text-muted);
-            font-weight: 500;
-        }
-
-        .data-table tr:hover {
-            background: rgba(255, 255, 255, 0.02);
-        }
-
-        /* Status badges */
-        .badge {
-            padding: 0.25rem 0.6rem;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            display: inline-block;
-        }
-
-        .badge-creada {
-            background: rgba(148, 163, 184, 0.2);
-            color: #94a3b8;
-        }
-
-        .badge-aprobada {
-            background: rgba(59, 130, 246, 0.2);
-            color: #60a5fa;
-        }
-
-        .badge-produccion {
-            background: rgba(245, 158, 11, 0.2);
-            color: #fbbf24;
-        }
-
-        .badge-finalizada {
-            background: rgba(16, 185, 129, 0.2);
-            color: #34d399;
-        }
-
-        .badge-rechazada {
-            background: rgba(239, 68, 68, 0.2);
-            color: #f87171;
-        }
-
-        /* Modals */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(4px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 50;
-            opacity: 0;
-            pointer-events: none;
-            transition: var(--transition-normal);
-        }
-
-        .modal-overlay.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .modal-content {
-            background: var(--clr-bg-card);
-            border: 1px solid var(--clr-border);
-            padding: 2rem;
-            border-radius: var(--border-radius-md);
-            width: 90%;
-            max-width: 500px;
-            transform: translateY(20px);
-            transition: var(--transition-normal);
-        }
-
-        .modal-overlay.active .modal-content {
-            transform: translateY(0);
-        }
-
-        .modal-header {
             margin-bottom: 1.5rem;
+            padding: 0 0.5rem;
         }
 
-        .modal-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 1rem;
-            margin-top: 2rem;
-        }
-
-        .btn-outline {
-            background: transparent;
-            border: 1px solid var(--clr-border);
+        .topbar h1 {
+            font-size: 1.5rem;
             color: var(--clr-text-main);
-            padding: 0.8rem 1.5rem;
-            border-radius: var(--border-radius-sm);
-            cursor: pointer;
-        }
-
-        .btn-outline:hover {
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        .btn-sm {
-            padding: 0.4rem 0.8rem;
-            font-size: 0.8rem;
+            font-weight: 600;
         }
 
         /* Flex Grid */
         .panel {
-            padding: 1.5rem;
+            padding: 0;
         }
 
         .flex-between {
             display: flex;
             justify-content: space-between;
             align-items: center;
+        }
+        
+        /* Card container */
+        .card {
+            background: var(--clr-bg-card);
+            border: 1px solid var(--clr-border);
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-sm);
+            padding: 1.5rem;
+        }
+        
+        /* Table adjustments */
+        .data-table {
+            margin-top: 0;
+            border-radius: var(--border-radius-lg);
+        }
+        
+        /* Spinner */
+        .btn-spinner {
+            border-color: var(--clr-primary);
+            border-top-color: transparent;
+        }
+
+        /* Badge overrides for dark text */
+        .badge {
+            padding: 0.25rem 0.625rem;
+            border-radius: 9999px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            display: inline-block;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
         }
     </style>
 </head>
@@ -231,7 +154,7 @@
 
     <aside class="sidebar">
         <div class="sidebar-header">
-            <h1>🏭 Orderly Sys</h1>
+            <h1>🏭 Orderly</h1>
         </div>
 
         <nav id="mainNav">
@@ -241,6 +164,9 @@
             <!-- Protected Elements, loaded dynamically JS -->
             <a class="nav-link hidden" data-view="productos" id="navProductos">
                 <span>📦 Productos</span>
+            </a>
+            <a class="nav-link hidden" data-view="informes" id="navInformes">
+                <span>📊 Informes</span>
             </a>
             <a class="nav-link hidden" data-view="usuarios" id="navUsuarios">
                 <span>👥 Usuarios</span>
@@ -252,7 +178,7 @@
                 <p id="userNameDisplay">Cargando...</p>
                 <span id="userLevelDisplay">Nivel -</span>
             </div>
-            <button id="logoutBtn" class="btn-outline btn-sm" style="margin-top:1rem; width:100%">Cerrar Sesión</button>
+            <button id="logoutBtn" class="btn-outline btn-sm" style="margin-top:1rem; width:100%; border-color: #334155; color: #94A3B8;">Cerrar Sesión</button>
         </div>
     </aside>
 
@@ -263,12 +189,12 @@
         </header>
 
         <!-- Dynamic Content Mount Point -->
-        <div id="appContainer" class="glass-card panel">
+        <div id="appContainer" class="card panel">
             <div id="loader" style="text-align: center; padding: 3rem;">
                 <div class="btn-spinner"
                     style="margin: 0 auto; display: block; border-color:var(--clr-primary); border-top-color:transparent">
                 </div>
-                <p style="margin-top: 1rem; color: var(--clr-text-muted)">Cargando datos empresariales...</p>
+                <p style="margin-top: 1rem; color: var(--clr-text-muted)">Cargando datos...</p>
             </div>
             <div id="tableContainer" class="hidden">
                 <!-- Inyectado via JS -->
