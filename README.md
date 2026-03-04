@@ -63,7 +63,7 @@ El servidor estará disponible en `http://localhost:3000`
 
 | Usuario | Correo | Contraseña | Nivel |
 |---------|--------|------------|-------|
-| Administrador | admin@test.com | ******** | 4 |
+| Administrador | admin@test.com | admin123 | 4 |
 
 ## 📱 Funcionalidades
 
